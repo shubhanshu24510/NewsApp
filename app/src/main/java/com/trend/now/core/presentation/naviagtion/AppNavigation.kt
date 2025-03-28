@@ -1,5 +1,7 @@
 package com.trend.now.core.presentation.naviagtion
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
@@ -21,6 +23,7 @@ import com.trend.now.news.presentation.feature.main.MainViewModel
 import com.trend.now.news.presentation.feature.news.NewsScreen
 import com.trend.now.news.presentation.feature.onboarding.OnBoardingScreen
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
@@ -28,7 +31,7 @@ fun AppNavigation(
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val mainUiState by mainViewModel.mainUiState.collectAsState()
-    val screenWidth = LocalConfiguration.current.screenWidthDp // in dp
+    val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenWidthPx = with(LocalDensity.current) { screenWidth.dp.toPx() }.toInt()
 
     if (!mainUiState.loading) {
@@ -45,7 +48,8 @@ fun AppNavigation(
             popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) }
         ) {
             composable(route = AppRoute.OnBoarding.path) {
-                OnBoardingScreen(modifier = modifier)
+                OnBoardingScreen(modifier = modifier,
+                    navController = navController)
             }
             composable(route = AppRoute.News.path) {
                 NewsScreen(modifier = modifier, navController = navController)

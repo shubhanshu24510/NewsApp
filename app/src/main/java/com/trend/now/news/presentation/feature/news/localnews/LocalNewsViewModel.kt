@@ -20,7 +20,10 @@ class LocalNewsViewModel @Inject constructor(
         userPrefRepository.newsCountry,
         userPrefRepository.newsLanguage
     ) { country, language ->
-        NewsPreference(country = country, language = language)
+        NewsPreference(
+            country = country,
+            language = language
+        )
     }.distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,

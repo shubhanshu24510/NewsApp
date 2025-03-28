@@ -2,6 +2,7 @@
 
 package com.trend.now.news.presentation.feature.news
 
+import android.content.Intent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -47,16 +48,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.trend.now.R
+import com.trend.now.core.domain.services.NewsForegroundService
 import com.trend.now.core.util.isListAtTop
+import com.trend.now.news.domain.repository.UserPrefRepository
 import com.trend.now.news.presentation.feature.news.component.NewsCard
 import com.trend.now.news.presentation.feature.news.localnews.LocalNewsSection
 import com.trend.now.news.presentation.feature.news.localnews.LocalNewsViewModel
 import com.trend.now.news.presentation.feature.news.topic.TopicSection
 import com.trend.now.news.presentation.feature.news.topic.TopicsViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.collections.isNotEmpty
@@ -70,33 +76,50 @@ fun NewsScreen(
     topicsViewModel: TopicsViewModel = hiltViewModel(),
     newsViewModel: NewsViewModel = hiltViewModel()
 ) {
+    // Lazy list state to track scroll position
     val newsListState = rememberLazyListState()
+
+    // Elevation for AppBar: Elevates when scrolling
     val appBarElevation by remember {
         derivedStateOf { if (newsListState.isListAtTop()) 0.dp else 8.dp }
     }
+
+    // Floating action button visibility: Shows when scrolled down
     val showFab by remember {
         derivedStateOf { newsListState.firstVisibleItemIndex > 1 }
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val trendingNewsUiState by newsViewModel.trendingNewsUiState.collectAsState()
+    val isForegroundServiceEnabled by newsViewModel.isForegroundServiceEnabled.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isForegroundServiceEnabled) {
+        if (isForegroundServiceEnabled) {
+            val serviceIntent = Intent(context, NewsForegroundService::class.java)
+            ContextCompat.startForegroundService(context, serviceIntent)
+        }
+    }
+
+    LaunchedEffect(newsListState) {
         snapshotFlow { newsListState.layoutInfo.visibleItemsInfo }
             .map { visibleItems ->
                 val lastVisibleItemIndex = visibleItems.lastOrNull()?.index ?: -1
                 val totalItems = newsListState.layoutInfo.totalItemsCount
                 Pair(lastVisibleItemIndex, totalItems)
             }
+            .distinctUntilChanged() // Prevent unnecessary recompositions
             .collect { (lastVisibleItemIndex, totalItems) ->
-                if (trendingNewsUiState.data.isEmpty()) return@collect
-                if (lastVisibleItemIndex >= totalItems - 1) {
+                if (trendingNewsUiState.data.isNotEmpty() &&
+                    lastVisibleItemIndex >= totalItems - 1 &&
+                    !trendingNewsUiState.loading // Prevent multiple calls
+                ) {
                     newsViewModel.loadMoreTrendingNews()
                 }
             }
     }
 
-    LaunchedEffect(trendingNewsUiState) {
+    //  Improved error handling: Prevents multiple snackbars showing at once
+    LaunchedEffect(trendingNewsUiState.success) {
         if (!trendingNewsUiState.success && trendingNewsUiState.data.isNotEmpty()) {
             snackbarHostState.showSnackbar(
                 message = context.getString(R.string.unable_to_load_more_news)
@@ -110,7 +133,7 @@ fun NewsScreen(
         topBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shadowElevation = appBarElevation,
+                shadowElevation = appBarElevation, // Dynamic shadow based on scroll position
             ) {
                 TopAppBar(
                     title = {
@@ -134,7 +157,7 @@ fun NewsScreen(
                 SmallFloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
-                            newsListState.animateScrollToItem(0)
+                            newsListState.animateScrollToItem(0) // Scroll to top on FAB click
                         }
                     },
                 ) {
@@ -143,6 +166,7 @@ fun NewsScreen(
             }
         }
     ) { innerPadding ->
+        // Pull-to-refresh functionality
         PullToRefreshBox(
             isRefreshing = trendingNewsUiState.refreshing,
             onRefresh = {
@@ -172,7 +196,8 @@ fun NewsScreen(
                         viewModel = topicsViewModel
                     )
                 }
-                if (trendingNewsUiState.loading) {
+                if (trendingNewsUiState.loading && trendingNewsUiState.data.isEmpty()) {
+                    // Show full-screen loading if the first page is still loading
                     item(key = "loading") {
                         Loading(modifier = Modifier.fillParentMaxSize())
                     }

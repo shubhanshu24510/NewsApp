@@ -15,6 +15,8 @@ interface UserPrefRepository {
     suspend fun setShowOnBoarding(show: Boolean)
     val isLocalNewsEnabled: Flow<Boolean>
     suspend fun setLocalNewsEnabled(enabled: Boolean)
+    val isForegroundServiceEnabled: Flow<Boolean>
+    suspend fun setForegroundServiceEnabled(enabled: Boolean)
 
     companion object {
         val selectedTopicPref = stringPreferencesKey("selected_topic")

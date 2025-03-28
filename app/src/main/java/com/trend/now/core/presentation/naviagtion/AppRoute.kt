@@ -7,3 +7,4 @@ sealed class AppRoute(val path: String) {
     data object CountrySettings : AppRoute("country_settings")
     data object LanguageSettings : AppRoute("language_settings")
 }
+

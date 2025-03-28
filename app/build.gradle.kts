@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.jetbrainsKotlinSerialization)
 }
 
 val properties = Properties().apply {
@@ -22,7 +23,7 @@ android {
 
     defaultConfig {
         applicationId = "com.trend.now"
-        minSdk = 24
+        minSdk = 33
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -69,7 +70,7 @@ dependencies {
     implementation(libs.androidx.hilt.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.navigation)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.animation)
     implementation(libs.androidx.ui.graphics)
@@ -84,7 +85,6 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.google.accompanist.permission)
     implementation (libs.play.services.ads)
-
 
     implementation(libs.androidx.room)
     implementation(libs.androidx.room.ktx)

@@ -20,8 +20,8 @@ class OnBoardingViewModel @Inject constructor(
     private val newsRepository: NewsRepository,
     private val userPrefRepository: UserPrefRepository
 ) : ViewModel() {
-
     private var countries: Map<String, Country> = mapOf()
+
     private val _loading = MutableStateFlow(true)
     val loading: StateFlow<Boolean> = _loading
 
@@ -31,13 +31,20 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
+    fun saveForegroundServicePermission(isGranted: Boolean) {
+        viewModelScope.launch {
+            userPrefRepository.setForegroundServiceEnabled(isGranted)
+        }
+    }
+
     fun setLoading(loading: Boolean) = viewModelScope.launch {
         _loading.value = loading
     }
 
     fun setupLocalNews(
         language: String,
-        country: String = ""
+        country: String = "",
+        onComplete: () -> Unit
     ) {
         _loading.value = true
         viewModelScope.launch {
@@ -46,6 +53,7 @@ class OnBoardingViewModel @Inject constructor(
                 userPrefRepository.setNewsCountry(DEFAULT_COUNTRY)
                 userPrefRepository.setShowOnBoarding(false)
                 _loading.value = false
+                onComplete() // Call onComplete() when preferences are saved
                 return@launch
             }
             val userCountry = countries[country]
@@ -65,6 +73,7 @@ class OnBoardingViewModel @Inject constructor(
             }
             userPrefRepository.setShowOnBoarding(false)
             _loading.value = false
+            onComplete() // Ensure this runs only after preferences are updated
         }
     }
 

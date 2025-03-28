@@ -2,6 +2,7 @@ package com.trend.now.core.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import com.trend.now.core.presentation.DEFAULT_COUNTRY
 import com.trend.now.core.presentation.DEFAULT_LANGUAGE
@@ -21,6 +22,13 @@ import javax.inject.Singleton
 class UserPrefRepositoryImpl @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) : UserPrefRepository {
+
+    override val isForegroundServiceEnabled: Flow<Boolean> = dataStore.data
+        .map { preferences -> preferences[foregroundServiceEnabledPref] ?: false }
+
+    override suspend fun setForegroundServiceEnabled(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[foregroundServiceEnabledPref] = enabled }
+    }
 
     override val selectedTopic: Flow<String> = dataStore.data
         .map { it[selectedTopicPref] ?: DEFAULT_TOPIC }
@@ -57,5 +65,10 @@ class UserPrefRepositoryImpl @Inject constructor(
         dataStore.edit {
             it[localNewsEnabledPref] = enabled
         }
+    }
+
+    companion object {
+        private val foregroundServiceEnabledPref =
+            booleanPreferencesKey("foreground_service_enabled")
     }
 }
