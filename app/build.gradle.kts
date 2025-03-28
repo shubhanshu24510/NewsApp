@@ -83,6 +83,8 @@ dependencies {
     implementation(libs.coil.okhttp)
     implementation(libs.okhttp)
     implementation(libs.google.accompanist.permission)
+    implementation (libs.play.services.ads)
+
 
     implementation(libs.androidx.room)
     implementation(libs.androidx.room.ktx)

@@ -17,7 +17,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object UserPrefModule {
-
     private const val NEWS_PREFERENCES = "news_preferences"
 
     @Provides
